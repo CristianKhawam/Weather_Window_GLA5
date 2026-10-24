@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="An anime-inspired weather window showing live weather for Calgary, Alberta.">
+  <meta name="theme-color" content="#101a2c">
+  <title>Anime Weather Window | Calgary</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <!-- Background photo of the room. The window gets the rain, snow, fog and lightning effects -->
+  <div id="room" class="room" role="img" aria-label="The bedroom window">
+    <div class="window-view">
+      <div class="precip"></div>
+      <div class="fog"></div>
+      <div class="flash"></div>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="Weather Window home">
+      <span id="brand-icon" class="brand-icon" aria-hidden="true">☀️</span>
+      <span><strong>Anime Weather Window</strong><small>Same sky, different stories</small></span>
+    </a>
+    <div class="header-actions">
+      <div class="header-status">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span id="connection-status">Connecting to live weather…</span>
+      </div>
+      <button id="panels-toggle" class="header-button" type="button" aria-pressed="false">Hide panels</button>
+    </div>
+  </header>
+
+  <main class="app-layout">
+    <section class="weather-card glass-panel" aria-labelledby="page-title">
+      <div class="location-row">
+        <div>
+          <p class="eyebrow">CURRENT CONDITIONS</p>
+          <h1 id="page-title">Calgary, Alberta</h1>
+          <p class="subtle" id="weather-updated">Getting the latest weather…</p>
+        </div>
+        <span id="weather-icon" class="weather-icon" aria-hidden="true">☁️</span>
+      </div>
+
+      <div class="temperature-row">
+        <p class="temperature"><span id="temperature">--</span><span class="degree" id="temperature-unit">°C</span></p>
+        <div>
+          <p class="condition-name" id="condition-name">Loading weather</p>
+          <p class="feels-like">Feels like <span id="feels-like">--</span><span id="feels-unit">°C</span></p>
+        </div>
+      </div>
+      <p class="weather-description" id="weather-description">The view outside will update when the weather data arrives.</p>
+
+      <div class="weather-stats">
+        <div class="stat"><span class="stat-icon" aria-hidden="true">💧</span><span class="stat-label">Humidity</span><strong id="humidity">--%</strong></div>
+        <div class="stat"><span class="stat-icon" aria-hidden="true">🌬️</span><span class="stat-label">Wind</span><strong id="wind">-- km/h</strong></div>
+        <div class="stat"><span class="stat-icon" aria-hidden="true">◉</span><span class="stat-label">Visibility</span><strong id="visibility">-- km</strong></div>
+        <div class="stat"><span class="stat-icon" aria-hidden="true">◷</span><span class="stat-label">Pressure</span><strong id="pressure">-- hPa</strong></div>
+      </div>
+
+      <div class="card-actions">
+        <button id="refresh-button" class="primary-button" type="button"><span aria-hidden="true">↻</span> Refresh weather</button>
+        <p id="error-message" class="error-message" role="alert" hidden></p>
+      </div>
+    </section>
+
+    <section class="controls-panel glass-panel" aria-labelledby="controls-title">
+      <div class="controls-heading">
+        <div><p class="eyebrow">MAKE IT YOURS</p><h2 id="controls-title">Weather controls</h2></div>
+        <!-- Weather icon, changed by script.js -->
+        <svg id="condition-symbol" class="controls-symbol" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>
+        </svg>
+      </div>
+      <div class="controls-grid">
+        <fieldset class="unit-control">
+          <legend>Temperature unit</legend>
+          <label><input type="radio" name="unit" value="celsius" checked> Celsius (°C)</label>
+          <label><input type="radio" name="unit" value="fahrenheit"> Fahrenheit (°F)</label>
+        </fieldset>
+        <div class="select-control">
+          <label for="condition-select">Try a condition (manual preview)</label>
+          <select id="condition-select">
+            <option value="live">Current weather from API</option>
+            <optgroup label="Day">
+              <option value="clear-day">Sunny</option>
+              <option value="rain-day">Rainy</option>
+              <option value="cloudy-day">Cloudy</option>
+              <option value="snow-day">Snowing</option>
+              <option value="storm-day">Thunderstorm</option>
+              <option value="fog-day">Foggy</option>
+            </optgroup>
+            <optgroup label="Night">
+              <option value="clear-night">Clear night</option>
+              <option value="rain-night">Rainy night</option>
+              <option value="cloudy-night">Cloudy night</option>
+              <option value="snow-night">Snowy night</option>
+              <option value="storm-night">Thunderstorm night</option>
+              <option value="fog-night">Foggy night</option>
+            </optgroup>
+          </select>
+          <p class="help-text">Preview mode changes the scene only. Choose “Current weather from API” or press Refresh to return to live conditions.</p>
+        </div>
+      </div>
+      <div class="clock-row">
+        <span class="clock-icon" aria-hidden="true">◷</span>
+        <div><p class="eyebrow">CALGARY LOCAL TIME</p><strong id="local-time">--:--:--</strong><span id="local-date">Loading date…</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Anime Weather Window</span>
+    <span>© <span id="year">2026</span> Cristian Khawam. All rights reserved.</span>
+    <span>Made for GLA 5 · Weather API</span>
+  </footer>
+</body>
+</html>

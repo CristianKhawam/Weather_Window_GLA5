@@ -1,0 +1,333 @@
+/* Anime Weather Window - GLA 5 */
+
+:root {
+  color-scheme: dark;
+  --ink: #f5f7fb;
+  --muted: #b9c6d8;
+  --accent: #8dcaff;
+  --accent-strong: #3289ef;
+  --gold: #ffce68;
+  --panel: rgba(10, 17, 31, .86);
+  --panel-border: rgba(255, 209, 140, .3);
+  --radius: clamp(1rem, 2vw, 1.6rem);
+  --page-gap: clamp(.8rem, 2vw, 1.6rem);
+  --page-width: min(100% - clamp(1rem, 3vw, 3rem), 120rem);
+  --panel-width: clamp(17rem, 21vw, 24rem);
+  --header-height: 0px; /* updated by script.js */
+}
+
+* { box-sizing: border-box; }
+
+/* The body is a flex column and main grows, so the footer stays at the bottom */
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  color: var(--ink);
+  background: #101827;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: clamp(.9rem, .8rem + .25vw, 1.05rem);
+}
+button, select, input { font: inherit; color: inherit; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+h1, h2, p { margin-top: 0; }
+
+
+/* ---------- Room photo ---------- */
+
+/* Fixed background below the header. It keeps the photo's shape (1672 x 941)
+   and covers the screen, so the window is always in the same spot of the photo */
+.room {
+  position: fixed;
+  z-index: 0;
+  top: calc(50% + var(--header-height) / 2);
+  left: 50%;
+  width: max(100vw, (100vh - var(--header-height)) * 1.7768);
+  aspect-ratio: 1672 / 941;
+  transform: translate(-50%, -50%);
+  background-size: 100% 100%;
+}
+.room.can-fade { transition: background-image .6s; }
+
+/* One photo for each weather, day and night */
+.room.weather-clear { background-image: url("images/room-clear-day.webp"); }
+.room.weather-cloudy { background-image: url("images/room-cloudy-day.webp"); }
+.room.weather-rain { background-image: url("images/room-rain-day.webp"); }
+.room.weather-storm { background-image: url("images/room-storm-day.webp"); }
+.room.weather-snow { background-image: url("images/room-snow-day.webp"); }
+.room.weather-fog { background-image: url("images/room-fog-day.webp"); }
+.room.weather-clear.is-night { background-image: url("images/room-clear-night.webp"); }
+.room.weather-cloudy.is-night { background-image: url("images/room-cloudy-night.webp"); }
+.room.weather-rain.is-night { background-image: url("images/room-rain-night.webp"); }
+.room.weather-storm.is-night { background-image: url("images/room-storm-night.webp"); }
+.room.weather-snow.is-night { background-image: url("images/room-snow-night.webp"); }
+.room.weather-fog.is-night { background-image: url("images/room-fog-night.webp"); }
+
+/* The window glass, measured on the photo (in % of the photo size) */
+.window-view {
+  position: absolute;
+  left: 25.2%;
+  top: 7%;
+  width: 61.8%;
+  height: 57.5%;
+  overflow: hidden;
+}
+.window-view > div {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .8s;
+}
+
+/* Raindrops and snowflakes (created in script.js) */
+.precip i {
+  position: absolute;
+  top: -15%;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.weather-rain .precip i {
+  width: 1px;
+  height: 1.2rem;
+  transform: rotate(4deg);
+  background: linear-gradient(transparent, rgba(225, 238, 255, .65));
+  animation-name: rain-fall;
+}
+.weather-storm .precip i {
+  width: 2px;
+  height: 2.2rem;
+  transform: rotate(21deg);
+  background: linear-gradient(transparent, rgba(235, 244, 255, .9));
+  animation-name: storm-fall;
+}
+.weather-snow .precip i {
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 .3rem rgba(255, 255, 255, .8);
+  animation-name: snow-fall;
+}
+
+/* Fog bands that slide slowly */
+.fog::before, .fog::after {
+  content: "";
+  position: absolute;
+  inset: 0 -50%;
+  background-image:
+    radial-gradient(ellipse 30% 22% at 25% 55%, rgba(236, 240, 244, .9), transparent 70%),
+    radial-gradient(ellipse 28% 20% at 70% 72%, rgba(230, 236, 240, .85), transparent 70%),
+    radial-gradient(ellipse 35% 18% at 50% 35%, rgba(240, 243, 246, .7), transparent 70%);
+  animation: fog-drift 18s ease-in-out infinite alternate;
+}
+.fog::after { top: 15%; opacity: .8; animation-duration: 26s; animation-direction: alternate-reverse; }
+
+/* Lightning flash in the window, and a softer one over the whole room */
+.flash { background: radial-gradient(ellipse at 60% 10%, rgba(255, 255, 255, .95), rgba(220, 230, 255, .6) 45%, rgba(200, 215, 255, .25)); }
+.room::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(205, 222, 255, .35);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Which effect each weather uses */
+.weather-rain .precip, .weather-storm .precip, .weather-snow .precip { opacity: 1; }
+.weather-fog .fog { opacity: .5; }
+.weather-storm .flash, .room.weather-storm::after { animation: lightning 4.5s infinite; }
+.is-night .precip { filter: brightness(.8); }
+.is-night .fog { filter: brightness(.5); }
+
+@keyframes rain-fall { to { top: 110%; margin-left: -6%; } }
+@keyframes storm-fall { to { top: 110%; margin-left: -30%; } }
+@keyframes snow-fall {
+  33% { margin-left: 3%; }
+  66% { margin-left: -3%; }
+  to { top: 110%; margin-left: 0; }
+}
+@keyframes fog-drift { from { transform: translateX(-12%); } to { transform: translateX(12%); } }
+/* Two quick flashes, like real lightning */
+@keyframes lightning {
+  0%, 60%, 100% { opacity: 0; }
+  61% { opacity: .9; }
+  63% { opacity: .15; }
+  65% { opacity: .8; }
+  70% { opacity: 0; }
+}
+
+
+/* ---------- Header ---------- */
+
+/* Stays at the top so it never covers the photo */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: clamp(.6rem, 1vw, .9rem) clamp(1rem, 3vw, 3rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--page-gap);
+  border-bottom: 1px solid rgba(255, 209, 140, .25);
+  background: #0b1324;
+}
+.brand { display: flex; align-items: center; gap: clamp(.6rem, 1.3vw, 1rem); color: inherit; text-decoration: none; }
+.brand-icon { font-size: clamp(1.8rem, 3vw, 2.6rem); line-height: 1; filter: drop-shadow(0 0 .8rem #ffc94d99); }
+.brand strong { display: block; font-size: clamp(1.1rem, .95rem + .9vw, 1.6rem); }
+.brand small { display: block; color: var(--muted); margin-top: .2em; font-size: clamp(.72rem, .68rem + .2vw, .9rem); }
+.header-actions { display: flex; align-items: center; gap: clamp(.6rem, 1.5vw, 1.2rem); }
+.header-status { display: flex; align-items: center; gap: .6em; color: var(--muted); font-size: clamp(.72rem, .68rem + .25vw, .9rem); text-align: right; }
+.live-dot { flex: none; width: .55em; height: .55em; border-radius: 50%; background: #5de0a0; }
+.header-button {
+  flex: none;
+  padding: clamp(.4rem, .6vw, .55rem) clamp(.7rem, 1.2vw, 1rem);
+  border: 1px solid rgba(255, 209, 140, .45);
+  border-radius: 99rem;
+  background: rgba(255, 206, 104, .1);
+  color: #ffdf9a;
+  font-size: clamp(.72rem, .68rem + .25vw, .88rem);
+  font-weight: 600;
+  cursor: pointer;
+}
+.header-button:hover { background: rgba(255, 206, 104, .2); }
+
+
+/* ---------- Main layout ---------- */
+
+/* Weather card | empty middle column (the window shows here) | controls */
+.app-layout {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: var(--page-width);
+  margin-inline: auto;
+  padding-block: clamp(1rem, 4vh, 3rem);
+  display: grid;
+  grid-template-columns: var(--panel-width) 1fr var(--panel-width);
+  grid-template-areas: "weather . controls";
+  align-items: start;
+  gap: var(--page-gap);
+}
+.glass-panel {
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 1rem 3rem #0008;
+  backdrop-filter: blur(1rem);
+  transition: opacity .35s, transform .35s, visibility .35s;
+}
+
+/* "Hide panels" button: the panels slide out */
+.panels-hidden .glass-panel { opacity: 0; visibility: hidden; }
+.panels-hidden .weather-card { transform: translateX(-2rem); }
+.panels-hidden .controls-panel { transform: translateX(2rem); }
+
+
+/* ---------- Weather card ---------- */
+
+.weather-card { grid-area: weather; padding: clamp(1.1rem, 2.1vw, 2rem); }
+.location-row { display: flex; justify-content: space-between; align-items: flex-start; gap: clamp(.6rem, 1vw, 1rem); }
+.eyebrow { margin: 0 0 .45em; color: var(--accent); font-size: clamp(.66rem, .62rem + .2vw, .8rem); letter-spacing: .15em; font-weight: 700; }
+h1 { margin-bottom: .25em; font-size: clamp(1.35rem, 1rem + 1.1vw, 2rem); line-height: 1.15; }
+h2 { margin: 0; font-size: clamp(1.1rem, .9rem + .7vw, 1.5rem); }
+.subtle, .feels-like, .weather-description, .help-text { color: var(--muted); }
+.subtle { margin-bottom: 0; font-size: clamp(.76rem, .72rem + .2vw, .9rem); }
+.weather-icon { font-size: clamp(2.2rem, 4vw, 3.5rem); line-height: 1; }
+.temperature-row { display: flex; align-items: center; flex-wrap: wrap; gap: clamp(.7rem, 1.7vw, 1.4rem); margin-block: clamp(1rem, 2.5vw, 2rem) clamp(.5rem, 1vw, .8rem); }
+.temperature { margin: 0; font-size: clamp(3.2rem, 2.2rem + 4vw, 5.6rem); font-weight: 700; letter-spacing: -.06em; line-height: .95; white-space: nowrap; }
+.degree { font-size: .42em; vertical-align: top; margin-left: .08em; }
+.condition-name { margin: 0 0 .3em; font-size: clamp(1.05rem, .85rem + .65vw, 1.45rem); font-weight: 700; }
+.feels-like { margin: 0; font-size: clamp(.8rem, .75rem + .2vw, .95rem); }
+.weather-description { min-height: 2.5em; line-height: 1.55; margin-bottom: clamp(1rem, 2vw, 1.6rem); font-size: clamp(.83rem, .78rem + .2vw, .98rem); }
+.weather-stats { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.8rem, 1.5vw, 1.2rem); padding-block: clamp(1rem, 1.8vw, 1.4rem); border-block: 1px solid #ffffff20; }
+.stat { display: grid; grid-template-columns: auto 1fr; gap: .15em .55em; align-items: center; }
+.stat-icon { grid-row: span 2; font-size: clamp(1rem, 1.2vw, 1.3rem); }
+.stat-label { color: var(--muted); font-size: clamp(.72rem, .68rem + .18vw, .85rem); }
+.stat strong { font-size: clamp(.82rem, .75rem + .25vw, 1rem); }
+.card-actions { padding-top: clamp(1rem, 2vw, 1.5rem); }
+.primary-button { width: 100%; padding: clamp(.8rem, 1.2vw, 1rem); border: 0; border-radius: clamp(.7rem, 1vw, .85rem); background: linear-gradient(115deg, #1687ff, #4cafff); color: white; font-weight: 700; cursor: pointer; transition: transform .2s, filter .2s; }
+.primary-button:hover { filter: brightness(1.1); transform: translateY(-2px); }
+.primary-button:disabled { opacity: .65; cursor: wait; transform: none; }
+.primary-button span { font-size: 1.25em; margin-right: .35em; }
+.error-message { margin: clamp(.6rem, 1vw, .75rem) 0 0; color: #ffb4b4; line-height: 1.45; font-size: clamp(.78rem, .74rem + .15vw, .88rem); }
+
+
+/* ---------- Controls panel ---------- */
+
+.controls-panel { grid-area: controls; padding: clamp(1rem, 2vw, 1.7rem); }
+.controls-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: clamp(.9rem, 1.5vw, 1.2rem); }
+/* Line icon that changes with the weather */
+.controls-symbol {
+  flex: none;
+  width: clamp(1.8rem, 3vw, 2.6rem);
+  height: clamp(1.8rem, 3vw, 2.6rem);
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.controls-grid { display: grid; gap: clamp(.9rem, 1.5vw, 1.2rem); }
+.unit-control { margin: 0; padding: 0 0 clamp(.8rem, 1.2vw, 1rem); border: 0; border-bottom: 1px solid #ffffff1e; display: flex; flex-direction: column; gap: clamp(.6rem, 1vw, .8rem); }
+.unit-control legend, .select-control label { display: block; color: var(--muted); font-size: clamp(.8rem, .75rem + .2vw, .95rem); margin-bottom: clamp(.6rem, 1vw, .8rem); }
+.unit-control label { display: flex; align-items: center; gap: .65em; cursor: pointer; }
+input[type="radio"] { accent-color: var(--accent-strong); width: 1.05em; height: 1.05em; }
+select { width: 100%; padding: clamp(.75rem, 1vw, .95rem); border: 1px solid #ffffff28; border-radius: clamp(.6rem, 1vw, .8rem); background: #15263b; }
+.help-text { margin: clamp(.5rem, 1vw, .7rem) 0 0; font-size: clamp(.72rem, .68rem + .18vw, .84rem); line-height: 1.5; }
+.clock-row { display: flex; align-items: center; gap: clamp(.7rem, 1.2vw, 1rem); margin-top: clamp(1rem, 2vw, 1.5rem); padding-top: clamp(1rem, 2vw, 1.5rem); border-top: 1px solid #ffffff1e; }
+.clock-icon { color: var(--accent); font-size: clamp(1.6rem, 2.5vw, 2.2rem); }
+.clock-row .eyebrow { margin-bottom: .2em; }
+.clock-row strong { display: block; font-size: clamp(1.2rem, 1rem + 1vw, 1.8rem); }
+.clock-row span:last-child { display: block; color: var(--muted); font-size: .85em; margin-top: .2em; }
+
+
+/* ---------- Footer ---------- */
+
+.site-footer {
+  position: relative;
+  z-index: 1;
+  width: var(--page-width);
+  margin-inline: auto;
+  padding: clamp(.8rem, 1.2vw, 1.1rem) clamp(1rem, 1.8vw, 1.7rem);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: clamp(.5rem, 1vw, 1rem);
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: rgba(9, 15, 29, .78);
+  backdrop-filter: blur(1rem);
+  color: #e1e8f4;
+  font-size: clamp(.68rem, .64rem + .2vw, .82rem);
+}
+.site-footer span:first-child { font-weight: 700; }
+
+
+/* ---------- Responsive ---------- */
+
+/* Tablets and phones: panels stack below the window */
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas: "weather" "controls";
+    padding-top: clamp(6rem, 32vh, 16rem); /* leaves the window visible at the top */
+  }
+  .controls-grid { grid-template-columns: 1fr 1fr; gap: clamp(1rem, 3vw, 2rem); }
+  .unit-control { border-bottom: 0; padding-bottom: 0; }
+  .site-footer { flex-wrap: wrap; justify-content: center; text-align: center; }
+  .panels-hidden .glass-panel { display: none; } /* no empty gap when hidden */
+}
+
+/* Small phones */
+@media (max-width: 560px) {
+  .site-header { align-items: flex-start; }
+  .header-actions { flex-direction: column; align-items: flex-end; }
+  .header-status { max-width: clamp(7rem, 30vw, 9rem); line-height: 1.35; }
+  .controls-grid { grid-template-columns: 1fr; }
+  .unit-control { padding-bottom: clamp(.8rem, 3vw, 1rem); border-bottom: 1px solid #ffffff1e; }
+  .site-footer span { flex-basis: 100%; }
+}
